@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Wealth Architect | Pro Multi-Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;700;900&family=Outfit:wght@400;700;900&display=swap');
+        
+        :root { 
+            --bg: #f4f7f5; 
+            --card: #ffffff; 
+            --text: #0f172a; 
+            --accent: #065f46; 
+            --gold: #92400e; 
+            --input-bg: rgba(0,0,0,0.05); 
+            --input-text: #0f172a; 
+            --border: rgba(0,0,0,0.1);
+        }
+        .dark { 
+            --bg: #020617; 
+            --card: #0f172a; 
+            --text: #f8fafc; 
+            --accent: #10b981; 
+            --gold: #fbbf24; 
+            --input-bg: #1e293b; 
+            --input-text: #f8fafc; 
+            --border: rgba(255,255,255,0.15);
+        }
+        
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); padding: 2rem 2rem 2rem 6rem; transition: all 0.4s ease; }
+        h1, h2, h3 { font-family: 'Outfit', sans-serif; }
+        
+        .signature { font-family: 'Dancing Script', cursive; font-size: 2.8rem; color: var(--accent); line-height: 1; }
+        .wealth-card { background: var(--card); border: 1px solid var(--border); border-radius: 1.5rem; box-shadow: 0 4px 20px -5px rgba(0,0,0,0.1); }
+
+        .input-wealth { background: var(--input-bg); color: var(--input-text); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.8rem; font-weight: 700; outline: none; transition: 0.2s; width: 100%; }
+        .input-wealth:focus { border-color: var(--accent); background: var(--card); }
+        
+        /* Select Fixes */
+        #assetType { appearance: none; cursor: pointer; }
+        .dark #assetType { background-color: #0f172a; color: #f8fafc; }
+        .dark #assetType option { background-color: #0f172a; color: #f8fafc; }
+
+        .stat-label { font-size: 0.75rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text); opacity: 0.9; }
+        .badge { padding: 2px 8px; border-radius: 4px; font-size: 0.6rem; font-weight: 900; text-transform: uppercase; }
+        .badge-good { background: #dcfce7; color: #166534; }
+        .badge-bad { background: #fee2e2; color: #991b1b; }
+        .badge-snowball { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        
+        #birthModal { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(12px); z-index: 100; display: none; align-items: center; justify-content: center; }
+        #birthModal.active { display: flex; }
+        
+        .milestone-badge { background: linear-gradient(135deg, #065f46, #064e3b); color: white; padding: 4px 12px; border-radius: 99px; font-size: 0.65rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px; }
+        
+        .fund-item-text { color: var(--text) !important; font-weight: 900; }
+        
+        .tooltip-btn { position: relative; }
+        .tooltip-btn::after {
+            content: attr(title);
+            position: absolute;
+            left: 110%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #0f172a;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 60;
+        }
+        .dark .tooltip-btn::after { background: #f8fafc; color: #0f172a; }
+        .tooltip-btn:hover::after { opacity: 1; }
+    </style>
+</head>
+<body class="transition-colors duration-500">
+
+    <div id="birthModal">
+        <div class="bg-white dark:bg-slate-900 p-10 rounded-3xl shadow-2xl text-center max-w-sm border border-slate-800">
+            <h2 class="text-3xl font-black mb-2 uppercase text-slate-900 dark:text-white">Architect Login</h2>
+            <p class="text-sm opacity-70 mb-6 text-slate-700 dark:text-slate-300">Initialize your wealth timeline.</p>
+            <input type="number" id="birthYearInput" placeholder="YYYY" class="input-wealth text-center text-2xl mb-4">
+            <button onclick="setBirthYear()" class="w-full bg-emerald-600 text-white font-black py-4 rounded-xl hover:bg-emerald-500">ACCESS LEDGER</button>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="fixed left-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-50">
+        <button onclick="saveAndRender()" title="Save Ledger" class="tooltip-btn w-12 h-12 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-lg">💾</button>
+        <button onclick="exportToExcel()" title="Export Statement (CSV)" class="tooltip-btn w-12 h-12 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-lg text-slate-800 dark:text-white font-bold border border-slate-200 dark:border-slate-700">📜</button>
+        <button onclick="resetLedger()" title="Reset All Data" class="tooltip-btn w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center shadow-lg">🍂</button>
+        <button onclick="toggleMode()" title="Toggle Dark/Light Mode" class="tooltip-btn w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg">🌓</button>
+    </aside>
+
+    <div class="max-w-6xl mx-auto space-y-8">
+        <header class="flex flex-col md:flex-row justify-between items-start gap-6">
+            <div class="flex flex-col gap-2">
+                <h1 class="text-5xl font-black tracking-tight uppercase">Wealth <span class="text-emerald-600">Architect</span></h1>
+                <p class="stat-label text-emerald-600 dark:text-emerald-400 font-bold">Strategic Cashflow & Debt Snowball Allocation Engine</p>
+                <div class="flex items-center gap-4 mt-2">
+                    <span class="signature">Mikko</span>
+                    <div id="milestoneContainer" class="flex gap-2"></div>
+                </div>
+            </div>
+            
+            <div class="wealth-card p-6 flex-1 max-w-xl border-l-4 border-emerald-600">
+                <div class="flex justify-between items-center mb-3">
+                    <select id="assetType" onchange="toggleDebtFields()" class="input-wealth text-[11px] font-black uppercase outline-none py-1 transition-colors w-auto">
+                        <option value="RE">Real Estate (12% Tax)</option>
+                        <option value="MF">Mutual Funds (Tax Exempt)</option>
+                        <option value="ST">Stocks/Div (10% Tax)</option>
+                        <option value="PB">Personal Business (25% Tax)</option>
+                        <option value="LI">Liability / Debt</option>
+                    </select>
+                    <div id="assetFlags" class="flex gap-2">
+                        <label class="flex items-center gap-1 text-[10px] font-black cursor-pointer"><input type="checkbox" id="useLeverage"> OPM</label>
+                        <label class="flex items-center gap-1 text-[10px] font-black cursor-pointer"><input type="checkbox" id="isShielded"> SHIELD</label>
+                    </div>
+                </div>
+                
+                <!-- Dynamic Entry Inputs -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="inputGrid">
+                    <input type="text" id="entryName" placeholder="Item Name" class="input-wealth col-span-2 md:col-span-1">
+                    <input type="number" id="entryVal" placeholder="Total Value/Amount" class="input-wealth">
+                    <input type="number" id="entryFlow" placeholder="Gross CF" class="input-wealth">
+                    <input type="number" id="entryInterest" placeholder="Mo. Interest %" class="input-wealth hidden">
+                    <button onclick="processEntry()" class="bg-emerald-600 text-white font-black text-[10px] rounded-lg hover:bg-emerald-500 uppercase tracking-wider">ACQUIRE</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <section class="lg:col-span-2 wealth-card p-8">
+                <div class="flex flex-col md:flex-row justify-between items-start mb-10 gap-4">
+                    <div>
+                        <span class="stat-label">Active Earned Income</span>
+                        <div class="flex items-center text-4xl font-black text-emerald-700 dark:text-emerald-400 mt-1">
+                            <span class="mr-2 text-2xl">₱</span>
+                            <input type="number" id="incomeInput" placeholder="0" oninput="calculate()" class="bg-transparent outline-none w-64 border-b-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+                        </div>
+                    </div>
+                    <div class="md:text-right">
+                        <span class="stat-label">Net Worth</span>
+                        <p id="totalNetWorth" class="text-4xl font-black mt-1">₱0</p>
+                    </div>
+                </div>
+
+                <!-- Allocations: Needs (30%), Debt Pay (55%), Emergency (10%), Reward (5%) -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 border-y py-6 border-slate-200 dark:border-slate-800">
+                    <div><span class="stat-label text-slate-600 dark:text-slate-300">🏠 Needs (30%)</span><p id="budgetNeeds" class="text-lg font-black mt-1">₱0</p></div>
+                    <div><span class="stat-label text-red-600 dark:text-red-400">🎯 Debt Pay (55%)</span><p id="budgetDebt" class="text-lg font-black mt-1">₱0</p></div>
+                    <div><span class="stat-label text-blue-600 dark:text-blue-400">🛡️ Emergency (10%)</span><p id="budgetEmergency" class="text-lg font-black mt-1">₱0</p></div>
+                    <div><span class="stat-label text-purple-600 dark:text-purple-400">🏆 Reward (5%)</span><p id="budgetReward" class="text-lg font-black mt-1">₱0</p></div>
+                </div>
+
+                <!-- Strategic Strategy Callout Note -->
+                <div class="mb-6 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs leading-relaxed text-amber-900 dark:text-amber-200">
+                    <strong>💡 Strategic Allocation Rule:</strong> Dedicate any surplus from your <strong>55% Debt Pay</strong> bucket to pay down credit cards and debts with the <strong>lowest balances first</strong>. Do <em>not</em> accelerate fixed installment loans that impose early full repayment fees—keep those on their minimum required payment schedule.
+                </div>
+
+                <!-- Emergency Fund Progress -->
+                <div class="mb-8 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="stat-label text-blue-600 dark:text-blue-400 font-bold">Emergency Fund Progress (Target: 6 Months Needs)</span>
+                        <span id="efTargetText" class="text-xs font-black">₱0 / ₱0</span>
+                    </div>
+                    <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div id="efProgressBar" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex justify-between items-end">
+                        <h3 class="text-lg font-black uppercase">Escape the Rat Race</h3>
+                        <div class="text-right">
+                            <span id="freedomPercent" class="text-3xl font-black text-emerald-600 dark:text-emerald-400">0%</span>
+                            <span id="freedomAge" class="block stat-label text-amber-600 dark:text-amber-400 font-bold">Escape: --</span>
+                        </div>
+                    </div>
+                    <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-300 dark:border-slate-700">
+                        <div id="progressBar" class="h-full bg-emerald-500 transition-all duration-700" style="width: 0%"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="wealth-card p-8 flex flex-col">
+                <h3 class="stat-label mb-4 text-center">Allocation Breakdown</h3>
+                <div class="flex-1 min-h-[250px] relative">
+                    <canvas id="budgetChart"></canvas>
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 text-center">
+                    <span class="stat-label">Inflow Balance</span>
+                    <p id="totalInflowDisplay" class="text-2xl font-black">₱0</p>
+                </div>
+            </section>
+        </main>
+
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
+            <!-- Asset Column -->
+            <div class="wealth-card p-6 border-t-4 border-emerald-500">
+                <h3 class="stat-label mb-6 text-emerald-600 dark:text-emerald-400 border-b pb-2 border-slate-200 dark:border-slate-800 font-bold">Asset Column</h3>
+                <ul id="assetList" class="space-y-3"></ul>
+            </div>
+
+            <!-- Liability Column -->
+            <div class="wealth-card p-6 border-t-4 border-red-500">
+                <div class="flex justify-between items-center mb-6 border-b pb-2 border-slate-200 dark:border-slate-800">
+                    <h3 class="stat-label text-red-600 dark:text-red-400 font-bold">Liability Column (Debt Snowball Prioritized)</h3>
+                    <span class="text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded border border-blue-200 dark:border-blue-800">Lowest Balance First</span>
+                </div>
+                <ul id="debtList" class="space-y-3"></ul>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let chart;
+        let assets = JSON.parse(localStorage.getItem('wa_assets')) || [];
+        let debts = JSON.parse(localStorage.getItem('wa_debts')) || [];
+        let currentEF = parseFloat(localStorage.getItem('wa_ef_balance')) || 0;
+
+        function toggleMode() { 
+            document.documentElement.classList.toggle('dark'); 
+            calculate(); 
+        }
+
+        function setBirthYear() {
+            const yr = document.getElementById('birthYearInput').value;
+            if(yr > 1900 && yr < 2027) {
+                localStorage.setItem('wealth_birthYear', yr);
+                document.getElementById('birthModal').classList.remove('active');
+                calculate();
+            }
+        }
+
+        function toggleDebtFields() {
+            const type = document.getElementById('assetType').value;
+            const flowInput = document.getElementById('entryFlow');
+            const interestInput = document.getElementById('entryInterest');
+            const flags = document.getElementById('assetFlags');
+
+            if(type === 'LI') {
+                flowInput.placeholder = "Monthly Payment";
+                interestInput.classList.remove('hidden');
+                flags.classList.add('hidden');
+            } else {
+                flowInput.placeholder = "Gross CF";
+                interestInput.classList.add('hidden');
+                flags.classList.remove('hidden');
+            }
+        }
+
+        function processEntry() {
+            const name = document.getElementById('entryName').value;
+            const val = parseFloat(document.getElementById('entryVal').value) || 0;
+            const flow = parseFloat(document.getElementById('entryFlow').value) || 0;
+            const interestRate = parseFloat(document.getElementById('entryInterest').value) || 0;
+            const type = document.getElementById('assetType').value;
+            const isShield = document.getElementById('isShielded').checked;
+            const useLev = document.getElementById('useLeverage').checked;
+
+            if(!name) return;
+
+            if(type === 'LI') {
+                debts.push({ 
+                    id: Date.now(), 
+                    name, 
+                    amt: val, 
+                    flow: flow, 
+                    interest: interestRate 
+                });
+            } else {
+                let taxRate = 0;
+                if(type === 'RE') taxRate = isShield ? 0.05 : 0.12;
+                if(type === 'ST') taxRate = 0.10;
+                if(type === 'MF') taxRate = 0;
+                if(type === 'PB') taxRate = isShield ? 0.10 : 0.25;
+
+                if(useLev && type === 'RE') {
+                    const equity = val * 0.20, loan = val * 0.80;
+                    const monthlyAmort = loan * 0.008;
+                    assets.push({ id: Date.now(), name: name + " (Equity)", val: equity, flow: flow - monthlyAmort, taxRate, type, isLev: true });
+                    debts.push({ id: Date.now()+1, name: name + " Mortgage", amt: loan, flow: monthlyAmort, interest: 0.6 });
+                } else {
+                    assets.push({ id: Date.now(), name, val, flow, taxRate, type, isLev: false });
+                }
+            }
+            saveAndRender();
+            ['entryName','entryVal','entryFlow','entryInterest'].forEach(id => document.getElementById(id).value = '');
+        }
+
+        function updateManualDebtPayment(id, newPaymentVal) {
+            const debt = debts.find(d => d.id === id);
+            if(debt) {
+                debt.flow = parseFloat(newPaymentVal) || 0;
+                saveAndRender();
+            }
+        }
+
+        function deleteItem(type, id) {
+            if(type === 'asset') assets = assets.filter(a => a.id !== id);
+            else debts = debts.filter(d => d.id !== id);
+            saveAndRender();
+        }
+
+        function payDebt(id) {
+            const debt = debts.find(d => d.id === id);
+            if(!debt) return;
+
+            const customPay = parseFloat(document.getElementById(`pay_input_${id}`).value);
+            const payment = !isNaN(customPay) && customPay > 0 ? customPay : debt.flow;
+
+            if (payment <= 0) {
+                alert("Please specify a payment amount higher than 0.");
+                return;
+            }
+
+            const moInterestAmt = debt.amt * ((debt.interest || 0) / 100);
+            const principalPaid = payment - moInterestAmt;
+
+            if(principalPaid <= 0) {
+                alert("Payment is lower than monthly accrued interest! Debt balance increased.");
+                debt.amt += Math.abs(principalPaid);
+            } else {
+                debt.amt -= principalPaid;
+            }
+
+            if(debt.amt <= 0) {
+                debts = debts.filter(d => d.id !== id);
+                alert(`🎉 Congratulations! ${debt.name} has been completely paid off!`);
+            }
+
+            saveAndRender();
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('wa_assets', JSON.stringify(assets));
+            localStorage.setItem('wa_debts', JSON.stringify(debts));
+            localStorage.setItem('wa_income', document.getElementById('incomeInput').value);
+            renderLists(); 
+            calculate();
+        }
+
+        function renderLists() {
+            const aL = document.getElementById('assetList'), dL = document.getElementById('debtList');
+            aL.innerHTML = ''; dL.innerHTML = '';
+            
+            assets.forEach(a => {
+                const capRate = a.val > 0 ? (((a.flow * (1-a.taxRate)) * 12) / a.val) * 100 : 0;
+                const isMF = a.type === 'MF';
+                aL.innerHTML += `<li class="flex justify-between p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <p class="stat-label ${isMF ? 'fund-item-text' : ''}">${a.name} ${isMF ? '💎' : ''}</p> 
+                            <span class="badge ${capRate >= 8 ? 'badge-good' : 'badge-bad'}">${capRate >= 8 ? 'Good' : 'Bad'}</span>
+                        </div>
+                        <p class="font-black text-xs text-slate-900 dark:text-slate-100 mt-1">₱${a.val.toLocaleString()} <span class="opacity-60 font-normal ml-2">${capRate.toFixed(1)}% Cap</span></p>
+                    </div>
+                    <div class="text-right flex items-center gap-4">
+                        <div><p class="stat-label">Net CF</p><p class="text-emerald-600 dark:text-emerald-400 font-bold">+₱${Math.round(a.flow * (1-a.taxRate)).toLocaleString()}/mo</p></div>
+                        <button onclick="deleteItem('asset', ${a.id})" class="text-slate-400 hover:text-red-500 font-bold">✕</button>
+                    </div></li>`;
+            });
+
+            debts.sort((a, b) => a.amt - b.amt);
+
+            debts.forEach((d, index) => {
+                const moInterestAmt = Math.round(d.amt * ((d.interest || 0) / 100));
+                const isTarget = index === 0;
+
+                dL.innerHTML += `<li class="flex flex-col gap-2 p-4 bg-red-50/20 dark:bg-red-900/10 rounded-xl border ${isTarget ? 'border-blue-400 dark:border-blue-600 ring-2 ring-blue-400/20' : 'border-red-100 dark:border-red-900/30'}">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <p class="stat-label font-bold text-slate-900 dark:text-slate-100">${d.name}</p>
+                                ${isTarget ? `<span class="badge badge-snowball">🎯 Target #1</span>` : ''}
+                            </div>
+                            <p class="font-black text-sm text-slate-900 dark:text-slate-100 mt-1">Balance: ₱${Math.round(d.amt).toLocaleString()}</p>
+                        </div>
+                        <button onclick="deleteItem('debt', ${d.id})" class="text-slate-400 hover:text-red-500 font-bold">✕</button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 text-xs items-center">
+                        <div>
+                            <span class="stat-label text-[9px]">Mo. Interest</span>
+                            <p class="font-bold text-red-600 dark:text-red-400">${d.interest || 0}% (₱${moInterestAmt.toLocaleString()})</p>
+                        </div>
+                        <div>
+                            <span class="stat-label text-[9px]">Mo. Fixed Pay</span>
+                            <input type="number" value="${d.flow}" onchange="updateManualDebtPayment(${d.id}, this.value)" class="input-wealth !p-1 text-xs w-24">
+                        </div>
+                        <div class="text-right flex items-center justify-end gap-1">
+                            <input type="number" id="pay_input_${d.id}" placeholder="₱ Extra" class="input-wealth !p-1 text-xs w-20">
+                            <button onclick="payDebt(${d.id})" class="bg-red-600 hover:bg-red-500 text-white font-black text-[10px] px-2 py-1.5 rounded-lg shadow-sm">PAY</button>
+                        </div>
+                    </div>
+                </li>`;
+            });
+        }
+
+        function calculate() {
+            const birthY = parseInt(localStorage.getItem('wealth_birthYear')) || 1995;
+            const currentAge = new Date().getFullYear() - birthY;
+            const earned = parseFloat(document.getElementById('incomeInput').value) || 0;
+
+            let grossPassive = 0;
+            const totalAssets = assets.reduce((s, a) => s + a.val, 0);
+            const totalDebt = debts.reduce((s, d) => s + d.amt, 0);
+            
+            // Required minimum debt obligations
+            const requiredDebtPayments = debts.reduce((s, d) => s + (d.flow || 0), 0);
+
+            assets.forEach(a => { grossPassive += (a.flow * (1 - a.taxRate)); });
+
+            // Base gross inflow before allocations
+            const totalInflow = earned + grossPassive;
+
+            /* Fixed Percentages Calculated Directly From Total Inflow */
+            const needs = totalInflow * 0.30;
+            const debtPayBucket = totalInflow * 0.55; // 55% dedicated debt pool
+            const emergency = totalInflow * 0.10;     // Unimpacted 10%
+            const reward = totalInflow * 0.05;        // Unimpacted 5%
+
+            // Net passive flow remaining after debt servicing
+            const netPassive = grossPassive - requiredDebtPayments;
+
+            document.getElementById('budgetNeeds').innerText = "₱" + Math.round(needs).toLocaleString();
+            document.getElementById('budgetDebt').innerText = "₱" + Math.round(debtPayBucket).toLocaleString();
+            document.getElementById('budgetEmergency').innerText = "₱" + Math.round(emergency).toLocaleString();
+            document.getElementById('budgetReward').innerText = "₱" + Math.round(reward).toLocaleString();
+            
+            document.getElementById('totalInflowDisplay').innerText = "₱" + Math.round(totalInflow).toLocaleString();
+            document.getElementById('totalNetWorth').innerText = "₱" + Math.round(totalAssets - totalDebt).toLocaleString();
+
+            const targetEF = needs * 6;
+            const efPercent = targetEF > 0 ? Math.min(100, (currentEF / targetEF) * 100) : 0;
+            document.getElementById('efTargetText').innerText = `₱${Math.round(currentEF).toLocaleString()} / ₱${Math.round(targetEF).toLocaleString()}`;
+            document.getElementById('efProgressBar').style.width = efPercent + "%";
+
+            const progress = needs > 0 ? (netPassive / needs) * 100 : 0;
+            document.getElementById('freedomPercent').innerText = Math.max(0, Math.floor(progress)) + "%";
+            document.getElementById('progressBar').style.width = Math.min(Math.max(0, progress), 100) + "%";
+            
+            const ageEl = document.getElementById('freedomAge');
+            if (progress >= 100) ageEl.innerText = "STATUS: ESCAPED";
+            else {
+                const gap = needs - netPassive;
+                const years = emergency > 0 ? gap / (emergency / 12) : 99;
+                ageEl.innerText = `Escape Projection: Age ${Math.ceil(currentAge + Math.max(0, years/12))}`;
+            }
+
+            const mContainer = document.getElementById('milestoneContainer');
+            mContainer.innerHTML = '';
+            if (totalAssets > totalDebt) mContainer.innerHTML += `<span class="milestone-badge">🌱 Solvent</span>`;
+            if (debts.length === 0 && totalDebt === 0) mContainer.innerHTML += `<span class="milestone-badge">⚡ Debt Free</span>`;
+            if (assets.some(a => a.type === 'PB')) mContainer.innerHTML += `<span class="milestone-badge">🏢 Entrepreneur</span>`;
+            if (progress >= 100) mContainer.innerHTML += `<span class="milestone-badge">🔥 Legend</span>`;
+
+            updateChart(needs, debtPayBucket, emergency, reward);
+        }
+
+        function updateChart(n, d, e, r) {
+            const ctx = document.getElementById('budgetChart').getContext('2d');
+            const isDark = document.documentElement.classList.contains('dark');
+            if(chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Allocation Strategy'],
+                    datasets: [
+                        { label: 'Needs (30%)', data: [n], backgroundColor: '#475569' },
+                        { label: 'Debt Pay (55%)', data: [d], backgroundColor: '#dc2626' },
+                        { label: 'Emergency Fund (10%)', data: [e], backgroundColor: '#2563eb' },
+                        { label: 'Reward (5%)', data: [r], backgroundColor: '#9333ea' }
+                    ]
+                },
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, display: false },
+                        y: { stacked: true, grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }, ticks: { display: false } }
+                    },
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10, weight: '900' }, color: isDark ? '#fff' : '#000' } }
+                    } 
+                }
+            });
+        }
+
+        function exportToExcel() {
+            let csv = "Wealth Architect Strategic Statement\nType,Name,Value/Amount,Monthly Flow,Interest Rate\n";
+            assets.forEach(a => csv += `Asset,${a.name},${a.val},${a.flow},N/A\n`);
+            debts.forEach(d => csv += `Liability,${d.name},${d.amt},-${d.flow},${d.interest||0}%\n`);
+            const blob = new Blob([csv], { type: 'text/csv' }), a = document.createElement('a');
+            a.href = window.URL.createObjectURL(blob); a.download = 'wealth_statement.csv'; a.click();
+        }
+
+        function resetLedger() { if(confirm("Erase all data?")) { localStorage.clear(); location.reload(); } }
+
+        window.onload = () => {
+            if(!localStorage.getItem('wealth_birthYear')) document.getElementById('birthModal').classList.add('active');
+            document.getElementById('incomeInput').value = localStorage.getItem('wealth_income') || "";
+            toggleDebtFields();
+            renderLists(); 
+            calculate();
+        };
+    </script>
+</body>
+</html>
