@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#065f46">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Wealth Architect | Pro Multi-Engine</title>
+    
+    <!-- PWA & Mobile Capabilities -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#065f46">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -34,13 +38,38 @@
             --border: rgba(255,255,255,0.15);
         }
         
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); padding: 2rem 2rem 2rem 6rem; transition: all 0.4s ease; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text); 
+            padding: 1rem 1rem 6rem 1rem; 
+            transition: all 0.4s ease; 
+        }
+
+        @media (min-width: 768px) {
+            body { padding: 2rem 2rem 2rem 6rem; }
+        }
+
         h1, h2, h3 { font-family: 'Outfit', sans-serif; }
         
-        .signature { font-family: 'Dancing Script', cursive; font-size: 2.8rem; color: var(--accent); line-height: 1; }
-        .wealth-card { background: var(--card); border: 1px solid var(--border); border-radius: 1.5rem; box-shadow: 0 4px 20px -5px rgba(0,0,0,0.1); }
+        .signature { font-family: 'Dancing Script', cursive; font-size: 2.2rem; color: var(--accent); line-height: 1; }
+        @media (min-width: 768px) { .signature { font-size: 2.8rem; } }
 
-        .input-wealth { background: var(--input-bg); color: var(--input-text); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.8rem; font-weight: 700; outline: none; transition: 0.2s; width: 100%; }
+        .wealth-card { background: var(--card); border: 1px solid var(--border); border-radius: 1.25rem; box-shadow: 0 4px 20px -5px rgba(0,0,0,0.08); }
+
+        .input-wealth { 
+            background: var(--input-bg); 
+            color: var(--input-text); 
+            border: 1px solid var(--border); 
+            border-radius: 0.75rem; 
+            padding: 0.75rem 0.8rem; 
+            font-weight: 700; 
+            outline: none; 
+            transition: 0.2s; 
+            width: 100%; 
+            min-height: 48px;
+            font-size: 14px;
+        }
         .input-wealth:focus { border-color: var(--accent); background: var(--card); }
         
         /* Select Fixes */
@@ -48,120 +77,108 @@
         .dark #assetType { background-color: #0f172a; color: #f8fafc; }
         .dark #assetType option { background-color: #0f172a; color: #f8fafc; }
 
-        .stat-label { font-size: 0.75rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text); opacity: 0.9; }
-        .badge { padding: 2px 8px; border-radius: 4px; font-size: 0.6rem; font-weight: 900; text-transform: uppercase; }
+        .stat-label { font-size: 0.7rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text); opacity: 0.9; }
+        @media (min-width: 768px) { .stat-label { font-size: 0.75rem; } }
+
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 0.6rem; font-weight: 900; text-transform: uppercase; }
         .badge-good { background: #dcfce7; color: #166534; }
         .badge-bad { background: #fee2e2; color: #991b1b; }
         .badge-snowball { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
         
-        #birthModal { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(12px); z-index: 100; display: none; align-items: center; justify-content: center; }
+        #birthModal { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(12px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 1rem; }
         #birthModal.active { display: flex; }
         
-        .milestone-badge { background: linear-gradient(135deg, #065f46, #064e3b); color: white; padding: 4px 12px; border-radius: 99px; font-size: 0.65rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px; }
+        .milestone-badge { background: linear-gradient(135deg, #065f46, #064e3b); color: white; padding: 4px 10px; border-radius: 99px; font-size: 0.6rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px; }
         
         .fund-item-text { color: var(--text) !important; font-weight: 900; }
         
-        .tooltip-btn { position: relative; }
-        .tooltip-btn::after {
-            content: attr(title);
-            position: absolute;
-            left: 110%;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #0f172a;
-            color: #fff;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-            z-index: 60;
+        .touch-btn {
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
         }
-        .dark .tooltip-btn::after { background: #f8fafc; color: #0f172a; }
-        .tooltip-btn:hover::after { opacity: 1; }
     </style>
 </head>
 <body class="transition-colors duration-500">
 
     <div id="birthModal">
-        <div class="bg-white dark:bg-slate-900 p-10 rounded-3xl shadow-2xl text-center max-w-sm border border-slate-800">
-            <h2 class="text-3xl font-black mb-2 uppercase text-slate-900 dark:text-white">Architect Login</h2>
-            <p class="text-sm opacity-70 mb-6 text-slate-700 dark:text-slate-300">Initialize your wealth timeline.</p>
-            <input type="number" id="birthYearInput" placeholder="YYYY" class="input-wealth text-center text-2xl mb-4">
-            <button onclick="setBirthYear()" class="w-full bg-emerald-600 text-white font-black py-4 rounded-xl hover:bg-emerald-500">ACCESS LEDGER</button>
+        <div class="bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-3xl shadow-2xl text-center w-full max-w-sm border border-slate-800">
+            <h2 class="text-2xl sm:text-3xl font-black mb-2 uppercase text-slate-900 dark:text-white">Architect Login</h2>
+            <p class="text-xs sm:text-sm opacity-70 mb-6 text-slate-700 dark:text-slate-300">Initialize your wealth timeline.</p>
+            <input type="number" inputmode="numeric" id="birthYearInput" placeholder="YYYY" class="input-wealth text-center text-2xl mb-4">
+            <button onclick="setBirthYear()" class="touch-btn w-full bg-emerald-600 text-white font-black rounded-xl hover:bg-emerald-500 active:scale-95 transition-transform">ACCESS LEDGER</button>
         </div>
     </div>
 
-    <!-- Sidebar Navigation -->
-    <aside class="fixed left-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-50">
-        <button onclick="saveAndRender()" title="Save Ledger" class="tooltip-btn w-12 h-12 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-lg">💾</button>
-        <button onclick="exportToExcel()" title="Export Statement (CSV)" class="tooltip-btn w-12 h-12 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-lg text-slate-800 dark:text-white font-bold border border-slate-200 dark:border-slate-700">📜</button>
-        <button onclick="resetLedger()" title="Reset All Data" class="tooltip-btn w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center shadow-lg">🍂</button>
-        <button onclick="toggleMode()" title="Toggle Dark/Light Mode" class="tooltip-btn w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg">🌓</button>
-    </aside>
+    <!-- Navigation: Desktop Sidebar & Mobile Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 md:bottom-auto md:right-auto md:left-6 md:top-1/2 md:-translate-y-1/2 flex flex-row md:flex-col justify-around md:justify-center p-3 md:p-0 gap-2 md:gap-4 z-50 bg-white/90 dark:bg-slate-900/90 md:bg-transparent backdrop-blur-lg md:backdrop-blur-none border-t md:border-t-0 border-slate-200 dark:border-slate-800">
+        <button onclick="saveAndRender()" title="Save Ledger" class="touch-btn w-12 h-12 rounded-xl bg-emerald-700 text-white shadow-lg active:scale-95 transition-transform">💾</button>
+        <button onclick="exportToExcel()" title="Export Statement (CSV)" class="touch-btn w-12 h-12 rounded-xl bg-white dark:bg-slate-800 shadow-lg text-slate-800 dark:text-white font-bold border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform">📜</button>
+        <button onclick="resetLedger()" title="Reset All Data" class="touch-btn w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-700 shadow-lg active:scale-95 transition-transform">🍂</button>
+        <button onclick="toggleMode()" title="Toggle Dark/Light Mode" class="touch-btn w-12 h-12 rounded-xl bg-amber-500 text-white shadow-lg active:scale-95 transition-transform">🌓</button>
+    </nav>
 
-    <div class="max-w-6xl mx-auto space-y-8">
-        <header class="flex flex-col md:flex-row justify-between items-start gap-6">
-            <div class="flex flex-col gap-2">
-                <h1 class="text-5xl font-black tracking-tight uppercase">Wealth <span class="text-emerald-600">Architect</span></h1>
-                <p class="stat-label text-emerald-600 dark:text-emerald-400 font-bold">Strategic Cashflow & Debt Snowball Allocation Engine</p>
-                <div class="flex items-center gap-4 mt-2">
+    <div class="max-w-6xl mx-auto space-y-6 md:space-y-8">
+        <header class="flex flex-col md:flex-row justify-between items-start gap-4 md:gap-6">
+            <div class="flex flex-col gap-1 md:gap-2">
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight uppercase">Wealth <span class="text-emerald-600">Architect</span></h1>
+                <p class="stat-label text-emerald-600 dark:text-emerald-400 font-bold">Strategic Cashflow & Debt Snowball Engine</p>
+                <div class="flex items-center gap-3 mt-1">
                     <span class="signature">Mikko</span>
-                    <div id="milestoneContainer" class="flex gap-2"></div>
+                    <div id="milestoneContainer" class="flex flex-wrap gap-1 md:gap-2"></div>
                 </div>
             </div>
             
-            <div class="wealth-card p-6 flex-1 max-w-xl border-l-4 border-emerald-600">
-                <div class="flex justify-between items-center mb-3">
-                    <select id="assetType" onchange="toggleDebtFields()" class="input-wealth text-[11px] font-black uppercase outline-none py-1 transition-colors w-auto">
+            <div class="wealth-card p-4 sm:p-6 w-full md:flex-1 md:max-w-xl border-l-4 border-emerald-600">
+                <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+                    <select id="assetType" onchange="toggleDebtFields()" class="input-wealth text-[11px] font-black uppercase outline-none py-1 transition-colors w-full sm:w-auto">
                         <option value="RE">Real Estate (12% Tax)</option>
                         <option value="MF">Mutual Funds (Tax Exempt)</option>
                         <option value="ST">Stocks/Div (10% Tax)</option>
                         <option value="PB">Personal Business (25% Tax)</option>
                         <option value="LI">Liability / Debt</option>
                     </select>
-                    <div id="assetFlags" class="flex gap-2">
-                        <label class="flex items-center gap-1 text-[10px] font-black cursor-pointer"><input type="checkbox" id="useLeverage"> OPM</label>
-                        <label class="flex items-center gap-1 text-[10px] font-black cursor-pointer"><input type="checkbox" id="isShielded"> SHIELD</label>
+                    <div id="assetFlags" class="flex gap-4">
+                        <label class="flex items-center gap-1.5 text-xs font-black cursor-pointer"><input type="checkbox" id="useLeverage" class="w-4 h-4"> OPM</label>
+                        <label class="flex items-center gap-1.5 text-xs font-black cursor-pointer"><input type="checkbox" id="isShielded" class="w-4 h-4"> SHIELD</label>
                     </div>
                 </div>
                 
                 <!-- Dynamic Entry Inputs -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="inputGrid">
-                    <input type="text" id="entryName" placeholder="Item Name" class="input-wealth col-span-2 md:col-span-1">
-                    <input type="number" id="entryVal" placeholder="Total Value/Amount" class="input-wealth">
-                    <input type="number" id="entryFlow" placeholder="Gross CF" class="input-wealth">
-                    <input type="number" id="entryInterest" placeholder="Mo. Interest %" class="input-wealth hidden">
-                    <button onclick="processEntry()" class="bg-emerald-600 text-white font-black text-[10px] rounded-lg hover:bg-emerald-500 uppercase tracking-wider">ACQUIRE</button>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2" id="inputGrid">
+                    <input type="text" id="entryName" placeholder="Item Name" class="input-wealth sm:col-span-2 md:col-span-1">
+                    <input type="number" inputmode="decimal" id="entryVal" placeholder="Total Value/Amount" class="input-wealth">
+                    <input type="number" inputmode="decimal" id="entryFlow" placeholder="Gross CF" class="input-wealth">
+                    <input type="number" inputmode="decimal" id="entryInterest" placeholder="Mo. Interest %" class="input-wealth hidden">
+                    <button onclick="processEntry()" class="touch-btn sm:col-span-2 md:col-span-1 bg-emerald-600 text-white font-black text-xs rounded-xl hover:bg-emerald-500 active:scale-95 transition-all uppercase tracking-wider">ACQUIRE</button>
                 </div>
             </div>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <section class="lg:col-span-2 wealth-card p-8">
-                <div class="flex flex-col md:flex-row justify-between items-start mb-10 gap-4">
-                    <div>
+            <section class="lg:col-span-2 wealth-card p-5 sm:p-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start mb-6 sm:mb-10 gap-4">
+                    <div class="w-full sm:w-auto">
                         <span class="stat-label">Active Earned Income</span>
-                        <div class="flex items-center text-4xl font-black text-emerald-700 dark:text-emerald-400 mt-1">
-                            <span class="mr-2 text-2xl">₱</span>
-                            <input type="number" id="incomeInput" placeholder="0" oninput="calculate()" class="bg-transparent outline-none w-64 border-b-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+                        <div class="flex items-center text-3xl sm:text-4xl font-black text-emerald-700 dark:text-emerald-400 mt-1">
+                            <span class="mr-2 text-xl sm:text-2xl">₱</span>
+                            <input type="number" inputmode="decimal" id="incomeInput" placeholder="0" oninput="calculate()" class="bg-transparent outline-none w-full sm:w-64 border-b-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100">
                         </div>
                     </div>
-                    <div class="md:text-right">
+                    <div class="sm:text-right">
                         <span class="stat-label">Net Worth</span>
-                        <p id="totalNetWorth" class="text-4xl font-black mt-1">₱0</p>
+                        <p id="totalNetWorth" class="text-3xl sm:text-4xl font-black mt-1">₱0</p>
                     </div>
                 </div>
 
                 <!-- Allocations: Needs (30%), Debt Pay (55%), Emergency (10%), Reward (5%) -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 border-y py-6 border-slate-200 dark:border-slate-800">
-                    <div><span class="stat-label text-slate-600 dark:text-slate-300">🏠 Needs (30%)</span><p id="budgetNeeds" class="text-lg font-black mt-1">₱0</p></div>
-                    <div><span class="stat-label text-red-600 dark:text-red-400">🎯 Debt Pay (55%)</span><p id="budgetDebt" class="text-lg font-black mt-1">₱0</p></div>
-                    <div><span class="stat-label text-blue-600 dark:text-blue-400">🛡️ Emergency (10%)</span><p id="budgetEmergency" class="text-lg font-black mt-1">₱0</p></div>
-                    <div><span class="stat-label text-purple-600 dark:text-purple-400">🏆 Reward (5%)</span><p id="budgetReward" class="text-lg font-black mt-1">₱0</p></div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 border-y py-4 sm:py-6 border-slate-200 dark:border-slate-800">
+                    <div><span class="stat-label text-slate-600 dark:text-slate-300">🏠 Needs (30%)</span><p id="budgetNeeds" class="text-base sm:text-lg font-black mt-1">₱0</p></div>
+                    <div><span class="stat-label text-red-600 dark:text-red-400">🎯 Debt Pay (55%)</span><p id="budgetDebt" class="text-base sm:text-lg font-black mt-1">₱0</p></div>
+                    <div><span class="stat-label text-blue-600 dark:text-blue-400">🛡️ Emergency (10%)</span><p id="budgetEmergency" class="text-base sm:text-lg font-black mt-1">₱0</p></div>
+                    <div><span class="stat-label text-purple-600 dark:text-purple-400">🏆 Reward (5%)</span><p id="budgetReward" class="text-base sm:text-lg font-black mt-1">₱0</p></div>
                 </div>
 
                 <!-- Strategic Strategy Callout Note -->
@@ -170,9 +187,9 @@
                 </div>
 
                 <!-- Emergency Fund Progress -->
-                <div class="mb-8 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+                <div class="mb-6 sm:mb-8 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="stat-label text-blue-600 dark:text-blue-400 font-bold">Emergency Fund Progress (Target: 6 Months Needs)</span>
+                        <span class="stat-label text-blue-600 dark:text-blue-400 font-bold">Emergency Fund Progress</span>
                         <span id="efTargetText" class="text-xs font-black">₱0 / ₱0</span>
                     </div>
                     <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -180,11 +197,11 @@
                     </div>
                 </div>
 
-                <div class="space-y-4">
+                <div class="space-y-3 sm:space-y-4">
                     <div class="flex justify-between items-end">
-                        <h3 class="text-lg font-black uppercase">Escape the Rat Race</h3>
+                        <h3 class="text-base sm:text-lg font-black uppercase">Escape the Rat Race</h3>
                         <div class="text-right">
-                            <span id="freedomPercent" class="text-3xl font-black text-emerald-600 dark:text-emerald-400">0%</span>
+                            <span id="freedomPercent" class="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">0%</span>
                             <span id="freedomAge" class="block stat-label text-amber-600 dark:text-amber-400 font-bold">Escape: --</span>
                         </div>
                     </div>
@@ -194,29 +211,29 @@
                 </div>
             </section>
 
-            <section class="wealth-card p-8 flex flex-col">
+            <section class="wealth-card p-5 sm:p-8 flex flex-col">
                 <h3 class="stat-label mb-4 text-center">Allocation Breakdown</h3>
-                <div class="flex-1 min-h-[250px] relative">
+                <div class="flex-1 min-h-[220px] sm:min-h-[250px] relative">
                     <canvas id="budgetChart"></canvas>
                 </div>
                 <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 text-center">
                     <span class="stat-label">Inflow Balance</span>
-                    <p id="totalInflowDisplay" class="text-2xl font-black">₱0</p>
+                    <p id="totalInflowDisplay" class="text-xl sm:text-2xl font-black">₱0</p>
                 </div>
             </section>
         </main>
 
-        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
             <!-- Asset Column -->
-            <div class="wealth-card p-6 border-t-4 border-emerald-500">
-                <h3 class="stat-label mb-6 text-emerald-600 dark:text-emerald-400 border-b pb-2 border-slate-200 dark:border-slate-800 font-bold">Asset Column</h3>
+            <div class="wealth-card p-4 sm:p-6 border-t-4 border-emerald-500">
+                <h3 class="stat-label mb-4 sm:mb-6 text-emerald-600 dark:text-emerald-400 border-b pb-2 border-slate-200 dark:border-slate-800 font-bold">Asset Column</h3>
                 <ul id="assetList" class="space-y-3"></ul>
             </div>
 
             <!-- Liability Column -->
-            <div class="wealth-card p-6 border-t-4 border-red-500">
-                <div class="flex justify-between items-center mb-6 border-b pb-2 border-slate-200 dark:border-slate-800">
-                    <h3 class="stat-label text-red-600 dark:text-red-400 font-bold">Liability Column (Debt Snowball Prioritized)</h3>
+            <div class="wealth-card p-4 sm:p-6 border-t-4 border-red-500">
+                <div class="flex flex-wrap justify-between items-center gap-2 mb-4 sm:mb-6 border-b pb-2 border-slate-200 dark:border-slate-800">
+                    <h3 class="stat-label text-red-600 dark:text-red-400 font-bold">Liability Column (Snowball)</h3>
                     <span class="text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded border border-blue-200 dark:border-blue-800">Lowest Balance First</span>
                 </div>
                 <ul id="debtList" class="space-y-3"></ul>
@@ -359,17 +376,17 @@
             assets.forEach(a => {
                 const capRate = a.val > 0 ? (((a.flow * (1-a.taxRate)) * 12) / a.val) * 100 : 0;
                 const isMF = a.type === 'MF';
-                aL.innerHTML += `<li class="flex justify-between p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800">
+                aL.innerHTML += `<li class="flex justify-between p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800">
                     <div>
                         <div class="flex items-center gap-2">
                             <p class="stat-label ${isMF ? 'fund-item-text' : ''}">${a.name} ${isMF ? '💎' : ''}</p> 
                             <span class="badge ${capRate >= 8 ? 'badge-good' : 'badge-bad'}">${capRate >= 8 ? 'Good' : 'Bad'}</span>
                         </div>
-                        <p class="font-black text-xs text-slate-900 dark:text-slate-100 mt-1">₱${a.val.toLocaleString()} <span class="opacity-60 font-normal ml-2">${capRate.toFixed(1)}% Cap</span></p>
+                        <p class="font-black text-xs text-slate-900 dark:text-slate-100 mt-1">₱${a.val.toLocaleString()} <span class="opacity-60 font-normal ml-1 sm:ml-2">${capRate.toFixed(1)}% Cap</span></p>
                     </div>
-                    <div class="text-right flex items-center gap-4">
-                        <div><p class="stat-label">Net CF</p><p class="text-emerald-600 dark:text-emerald-400 font-bold">+₱${Math.round(a.flow * (1-a.taxRate)).toLocaleString()}/mo</p></div>
-                        <button onclick="deleteItem('asset', ${a.id})" class="text-slate-400 hover:text-red-500 font-bold">✕</button>
+                    <div class="text-right flex items-center gap-3 sm:gap-4">
+                        <div><p class="stat-label">Net CF</p><p class="text-emerald-600 dark:text-emerald-400 font-bold text-xs sm:text-sm">+₱${Math.round(a.flow * (1-a.taxRate)).toLocaleString()}/mo</p></div>
+                        <button onclick="deleteItem('asset', ${a.id})" class="text-slate-400 hover:text-red-500 font-bold p-1">✕</button>
                     </div></li>`;
             });
 
@@ -379,29 +396,29 @@
                 const moInterestAmt = Math.round(d.amt * ((d.interest || 0) / 100));
                 const isTarget = index === 0;
 
-                dL.innerHTML += `<li class="flex flex-col gap-2 p-4 bg-red-50/20 dark:bg-red-900/10 rounded-xl border ${isTarget ? 'border-blue-400 dark:border-blue-600 ring-2 ring-blue-400/20' : 'border-red-100 dark:border-red-900/30'}">
+                dL.innerHTML += `<li class="flex flex-col gap-2 p-3.5 sm:p-4 bg-red-50/20 dark:bg-red-900/10 rounded-xl border ${isTarget ? 'border-blue-400 dark:border-blue-600 ring-2 ring-blue-400/20' : 'border-red-100 dark:border-red-900/30'}">
                     <div class="flex justify-between items-start">
                         <div>
                             <div class="flex items-center gap-2">
                                 <p class="stat-label font-bold text-slate-900 dark:text-slate-100">${d.name}</p>
                                 ${isTarget ? `<span class="badge badge-snowball">🎯 Target #1</span>` : ''}
                             </div>
-                            <p class="font-black text-sm text-slate-900 dark:text-slate-100 mt-1">Balance: ₱${Math.round(d.amt).toLocaleString()}</p>
+                            <p class="font-black text-xs sm:text-sm text-slate-900 dark:text-slate-100 mt-1">Balance: ₱${Math.round(d.amt).toLocaleString()}</p>
                         </div>
-                        <button onclick="deleteItem('debt', ${d.id})" class="text-slate-400 hover:text-red-500 font-bold">✕</button>
+                        <button onclick="deleteItem('debt', ${d.id})" class="text-slate-400 hover:text-red-500 font-bold p-1">✕</button>
                     </div>
-                    <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 text-xs items-center">
-                        <div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 text-xs items-center">
+                        <div class="flex justify-between sm:block">
                             <span class="stat-label text-[9px]">Mo. Interest</span>
                             <p class="font-bold text-red-600 dark:text-red-400">${d.interest || 0}% (₱${moInterestAmt.toLocaleString()})</p>
                         </div>
-                        <div>
+                        <div class="flex justify-between sm:block items-center">
                             <span class="stat-label text-[9px]">Mo. Fixed Pay</span>
-                            <input type="number" value="${d.flow}" onchange="updateManualDebtPayment(${d.id}, this.value)" class="input-wealth !p-1 text-xs w-24">
+                            <input type="number" inputmode="decimal" value="${d.flow}" onchange="updateManualDebtPayment(${d.id}, this.value)" class="input-wealth !p-1 !min-h-[36px] text-xs w-28 sm:w-24">
                         </div>
-                        <div class="text-right flex items-center justify-end gap-1">
-                            <input type="number" id="pay_input_${d.id}" placeholder="₱ Extra" class="input-wealth !p-1 text-xs w-20">
-                            <button onclick="payDebt(${d.id})" class="bg-red-600 hover:bg-red-500 text-white font-black text-[10px] px-2 py-1.5 rounded-lg shadow-sm">PAY</button>
+                        <div class="text-right flex items-center justify-between sm:justify-end gap-1">
+                            <input type="number" inputmode="decimal" id="pay_input_${d.id}" placeholder="₱ Extra" class="input-wealth !p-1 !min-h-[36px] text-xs w-28 sm:w-20">
+                            <button onclick="payDebt(${d.id})" class="touch-btn bg-red-600 hover:bg-red-500 text-white font-black text-[10px] px-3 !min-h-[36px] rounded-lg shadow-sm">PAY</button>
                         </div>
                     </div>
                 </li>`;
@@ -516,14 +533,16 @@
             calculate();
         };
     </script>
+
+    <!-- Service Worker Registration -->
     <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('Service Worker Registered'))
-        .catch(err => console.log('Service Worker Failed', err));
-    });
-  }
-</script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker Registered'))
+            .catch(err => console.log('Service Worker Failed', err));
+        });
+      }
+    </script>
 </body>
 </html>
